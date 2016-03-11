@@ -102,13 +102,60 @@ class Classifer(object):
         self.params = [self.W, self.b]
         self.input = input
 
-    def negative_log_likelihood(self, y):
-        return -T.mean(T.log(self.p_y_given_x)[T.arange(y.shape[0]), y])
+    def errors(self, y):
+        # check if y has same dimension of y_pred
+        if y.ndim != self.y_pred.ndim:
+            raise TypeError(
+                'y should have the same shape as self.y_pred',
+                ('y', y.type, 'y_pred', self.y_pred.type)
+            )
+        # check if y is of the correct datatype
+        if y.dtype.startswith('int'):
+            # the T.neq operator returns a vector of 0s and 1s, where 1
+            # represents a mistake in prediction
+            return T.mean(T.neq(self.y_pred, y))
+        else:
+            raise NotImplementedError()
+
+def evaluate_model(input_sequence, label, ):
+    convnet = LeNetConvPoolLayer()
+    hiddenlayer = hiddenlayer()
+    classifer = Classifer()
+
+    loss = T.nnet.categorical_crossentropy(classifer.p_y_given_x, label)
+    cost = loss
+    parameters = convnet.params + hiddenlayer.params + classifer.params
+
+    train_model = theano.function(
+        [index],
+        cost,
+        updates=updates,
+        givens={
+            x: train_set_x[index * batch_size: (index + 1) * batch_size],
+            y: train_set_y[index * batch_size: (index + 1) * batch_size]
+        }
+    )
+
+    test_model = theano.function(
+        [index],
+        classifer.errors(y),
+        givens={
+            x: test_set_x[index * batch_size: (index + 1) * batch_size],
+            y: test_set_y[index * batch_size: (index + 1) * batch_size]
+        }
+    )
+
+    validate_model = theano.function(
+        [index],
+        classifer.errors(y),
+        givens={
+            x: valid_set_x[index * batch_size: (index + 1) * batch_size],
+            y: valid_set_y[index * batch_size: (index + 1) * batch_size]
+        }
+    )
 
 def main():
     rng = np.random.RandomState(23455)
-    sequence = np.load("sequence_1.npy")
-    sequence_input = sequence.reshape(600, 4)
-    print(sequence_input)
+
 if __name__=="__main__":
     main()
